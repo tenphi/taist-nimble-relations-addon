@@ -1,25 +1,28 @@
-ContactViewPage = window.ContactViewPage = {
+DealViewPage = window.DealViewPage = {
 
   data: {
-    title: 'Relations',
+    title: 'Relations:',
     relations: [],
     disabled: true
   },
+  selector: '.DealView .dealMainField.relatedTo',
   initialized: false,
 
   init: function () {
     this.initialized = true;
-    taistApi.wait.elementRender('.ContactView .mainInfoWrapper', this._prepare.bind(this));
+
+    taistApi.wait.once(function() {
+      return $(this.selector).find('a').attr('href');
+    }.bind(this), this._prepare.bind(this));
   },
 
   update: function() {
     if (!this.initialized) return;
 
-    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
+    var href = $(this.selector).find('a').attr('href');
+    this.contactId = href && href.split('=')[1];
 
-    if (match) {
-      this.contactId = match[2];
-    } else {
+    if (!this.contactId) {
       return;
     }
 
@@ -34,14 +37,14 @@ ContactViewPage = window.ContactViewPage = {
   },
 
   _prepare: function() {
-    taistApi.log('contact-view page opened');
+    taistApi.log('deal-view page opened');
 
-    var $container = $('.ContactView .mainInfoWrapper');
-    var $field = $(templates['contact-view']);
+    var $container = $(this.selector);
+    var $field = $(templates['deal-view']);
 
     rivets.bind($field, this.data);
 
-    $container.find('.address.middle-column').after($field);
+    $container.append($field);
 
     this.update();
   }

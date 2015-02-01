@@ -23,13 +23,16 @@ function init() {
 
   ContactEditPage.init();
   ContactViewPage.init();
+  DealViewPage.init();
 
   taistApi.hash.onChange(function(newHash, oldHash) {
     ContactEditPage.update();
     ContactViewPage.update();
-    //if (~newHash.indexOf('app/contacts')) {
-    //
-    //}
+
+    // it retrieves info from rendered page
+    setTimeout(function() {
+      DealViewPage.update();
+    }, 250);
   }.bind(this));
 
   taistApi.log('token is received: ', options.token);

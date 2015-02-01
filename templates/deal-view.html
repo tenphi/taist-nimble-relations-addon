@@ -1,0 +1,8 @@
+<span rv-hide="disabled" style="white-space: nowrap;">
+  (
+  <span>{ title }</span>
+  <span rv-each-contact="relations" style="width: auto;">
+    <a rv-href="contact.link">{ contact.full_name }</a><span style="width: auto;" rv-hide="contact.last">,</span>&nbsp;
+  </span>
+  )
+</span>

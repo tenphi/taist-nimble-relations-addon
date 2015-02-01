@@ -3,7 +3,8 @@ ContactEditPage = window.ContactEditPage = {
   data: {
     title: 'Relations',
     relations: [],
-    contacts: []
+    contacts: [],
+    disabled: true
   },
   initialized: false,
 
