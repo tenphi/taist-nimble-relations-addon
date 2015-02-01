@@ -1,0 +1,9 @@
+{
+  "id": "nimble-relations",
+  "js": "addon.js",
+  "title": "Relations",
+  "siteName": "Nimble",
+  "siteRegexp": "nimble.com",
+  "shortDescription": "Add `relations` field to client info",
+  "description": "addon.md"
+}
