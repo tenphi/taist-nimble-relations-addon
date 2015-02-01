@@ -1,0 +1,30 @@
+{
+  "name": "nimble-relations-addon",
+  "version": "0.0.1",
+  "description": "Custom `Relations` field for contacts in Nimble",
+  "main": "gulpfile.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tenphi/nimble-relations-addon.git"
+  },
+  "keywords": [
+    "taist",
+    "nimble",
+    "addon",
+    "relations"
+  ],
+  "author": "Andrey Yamanov <tenphi@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tenphi/nimble-relations-addon/issues"
+  },
+  "homepage": "https://github.com/tenphi/nimble-relations-addon",
+  "dependencies": {
+    "gulp": "^3.8.10",
+    "gulp-concat": "^2.4.3",
+    "gulp-wrap": "^0.10.1"
+  }
+}
