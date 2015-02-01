@@ -5,11 +5,23 @@ ContactEditPage = window.ContactEditPage = {
     relations: [],
     contacts: []
   },
+  initialized: false,
 
   init: function () {
+    this.initialized = true;
     this.data.addRelation = this._addRelation.bind(this);
 
     taistApi.wait.elementRender('.ContactEditView .CustomFieldsContainer tbody', this._prepare.bind(this));
+  },
+
+  update: function() {
+    if (!this.initialized) return;
+
+    Relations.getAll(this.contactId, function(err, relationIds) {
+      this.data.relations = Contacts.getRelationContacts(relationIds);
+      this._updateContacts();
+      this._addEvents();
+    }.bind(this));
   },
 
   _prepare: function() {
@@ -23,12 +35,6 @@ ContactEditPage = window.ContactEditPage = {
       return;
     }
 
-    Relations.getAll(this.contactId, function(err, relationIds) {
-      this.data.relations = Contacts.getRelationContacts(relationIds);
-      this._updateContacts();
-      this._addEvents();
-    }.bind(this));
-
     var $container = $('.CustomFieldsContainer tbody');
     var $header = $(templates['contact-edit-header']);
     var $body = $(templates['contact-edit-body']);
@@ -38,14 +44,8 @@ ContactEditPage = window.ContactEditPage = {
 
     $container.append($header);
     $container.append($body);
-  },
 
-  _generateRelations: function(id) {
-
-  },
-
-  _removeRelation: function(id) {
-
+    this.update();
   },
 
   _updateContacts: function() {

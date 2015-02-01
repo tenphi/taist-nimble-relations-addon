@@ -24,11 +24,16 @@ function init() {
   Contacts.update();
 
   ContactEditPage.init();
+  ContactViewPage.init();
 
-  //taistApi.hash.onChange(function(newHash, oldHash) {
-  //  ['app/contacts/list', 'app/contacts/view', 'app/contacts/edit_contact']
-  //  console.log(newHash, oldHash);
-  //});
+  taistApi.hash.onChange(function(newHash, oldHash) {
+    ContactEditPage.update();
+    ContactViewPage.update();
+    //if (~newHash.indexOf('app/contacts')) {
+    //
+    //}
+  }.bind(this));
+
   taistApi.log('token is received: ', options.token);
 }
 
@@ -38,96 +43,7 @@ function start(_taistApi, entryPoint) {
 }
 var templates; if (!templates) { templates = {}} templates["contact-edit-body"] = '<tr class="twoColumn">  <td colspan="2">    <div class="leftPanel">      <div class="ContactFieldWidget edit multi-line-text-box twoColumn">        <div>          <div class="ContactInputWidget initial">            <div class="fieldHolder">              <div class="nmbl-CustomFieldFormTextWidget">                <div class="valueHolder">                  <div class="taist-contact" rv-each-contact="relations">                    <a rv-href="contact.link">{ contact.full_name }</a>                    <img rv-on-click="contact.remove" class="gwt-Image"                         src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAATCAYAAABLN4eXAAAAlUlEQVR42mNgoBScO3dO//z58yeA9H8YhvL18WnaiKwBCW/Ep+kkEL9BE3sDEkdX+B2H6bjwd/I0gQDQs9EggTNnzthgczZIHBoo0XBBijRduHDB7NSpU0pA9h6of/eA+CDxEaWJrNAD4rmrVq1iRtawf/9+lrNnz87HpsmfmNQAUgfXdPHiRW6g4AoCmlaA1DHQFQAAk+K2Z8TV29MAAAAASUVORK5CYII=">                    <div style="clear:both;"></div>                  </div>                </div>              </div>            </div>          </div>        </div>        <div rv-hide="disabled">          <select rv-value="addedRelation">            <option rv-each-contact="contacts" rv-value="contact.id">{ contact.full_name }</option>          </select>          <a rv-on-click="addRelation" class="addField" style="display: inline-block;">Add relation</a>        </div>      </div>    </div>  </td></tr>'; 
 var templates; if (!templates) { templates = {}} templates["contact-edit-header"] = '<tr class="twoColumn">  <td colspan="2">    <div class="leftPanel">      <div class="ContactFieldWidget edit separator twoColumn noborder">        <div>          <div class="ContactInputWidget">            <div class="fieldHolder">              <div class="nmbl-CustomFieldSeparator">                <div class="valueHolder">                  <div style="clear:both;"></div>                  <div class="blockHeader resolutionMin">{ title }</div>                </div>              </div>            </div>          </div>        </div>        <div aria-hidden="true" style="display: none;"><a class="addField">{ title }</a></div>      </div>    </div>  </td></tr>'; 
-ContactEditPage = window.ContactEditPage = {
-
-  data: {
-    title: 'Relations',
-    relations: [],
-    contacts: []
-  },
-
-  init: function () {
-    this.data.addRelation = this._addRelation.bind(this);
-
-    taistApi.wait.elementRender('.ContactEditView .CustomFieldsContainer tbody', this._prepare.bind(this));
-  },
-
-  _prepare: function() {
-    taistApi.log('contact-edit page opened');
-
-    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
-
-    if (match) {
-      this.contactId = match[2];
-    } else {
-      return;
-    }
-
-    Relations.getAll(this.contactId, function(err, relationIds) {
-      this.data.relations = Contacts.getRelationContacts(relationIds);
-      this._updateContacts();
-      this._addEvents();
-    }.bind(this));
-
-    var $container = $('.CustomFieldsContainer tbody');
-    var $header = $(templates['contact-edit-header']);
-    var $body = $(templates['contact-edit-body']);
-
-    rivets.bind($header, this.data);
-    rivets.bind($body, this.data);
-
-    $container.append($header);
-    $container.append($body);
-  },
-
-  _generateRelations: function(id) {
-
-  },
-
-  _removeRelation: function(id) {
-
-  },
-
-  _updateContacts: function() {
-    Relations.getAll(this.contactId, function(err, relationIds) {
-      this.data.contacts = Contacts.list.filter(function(contact) {
-        return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
-      }.bind(this));
-
-      this.data.disabled = !this.data.contacts.length;
-
-      if (!this.data.disabled) {
-        this.data.addedRelation = this.data.contacts[0].id;
-      }
-    }.bind(this));
-  },
-
-  _addEvents: function() {
-    var relations = this.data.relations;
-    var contactId = this.contactId;
-
-    relations.forEach(function(relation) {
-      relation.remove = function() {
-        relations.splice(relations.indexOf(relation), 1);
-        Relations.remove(contactId, relation.id, function() {
-          this._updateContacts();
-        }.bind(this));
-      }.bind(this);
-    }.bind(this));
-  },
-
-  _addRelation: function() {
-    var id = this.data.addedRelation;
-
-    taistApi.log('adding relation:', id);
-    Relations.add(this.contactId, id, function() {
-      this.data.relations.push(Contacts.findById(id));
-      this._updateContacts();
-      this._addEvents();
-    }.bind(this));
-  }
-
-};
+var templates; if (!templates) { templates = {}} templates["contact-view"] = '<div rv-hide="disabled" class="relations info-field middle-column" style="white-space: nowrap;">  <span>{ title }</span>  <span rv-each-contact="relations" style="width: auto;">    <a rv-href="contact.link">{ contact.full_name }</a><span style="width: auto;" rv-hide="contact.last">,</span>&nbsp;  </span></div>'; 
 var Contacts = window.Contacts = {
 
   list: [],
@@ -221,6 +137,144 @@ var Relations = {
       err && taistApi.log('relation wasn\'t saved:');
       cb && cb(err);
     });
+  }
+
+};
+ContactEditPage = window.ContactEditPage = {
+
+  data: {
+    title: 'Relations',
+    relations: [],
+    contacts: []
+  },
+  initialized: false,
+
+  init: function () {
+    this.initialized = true;
+    this.data.addRelation = this._addRelation.bind(this);
+
+    taistApi.wait.elementRender('.ContactEditView .CustomFieldsContainer tbody', this._prepare.bind(this));
+  },
+
+  update: function() {
+    if (!this.initialized) return;
+
+    Relations.getAll(this.contactId, function(err, relationIds) {
+      this.data.relations = Contacts.getRelationContacts(relationIds);
+      this._updateContacts();
+      this._addEvents();
+    }.bind(this));
+  },
+
+  _prepare: function() {
+    taistApi.log('contact-edit page opened');
+
+    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
+
+    if (match) {
+      this.contactId = match[2];
+    } else {
+      return;
+    }
+
+    var $container = $('.CustomFieldsContainer tbody');
+    var $header = $(templates['contact-edit-header']);
+    var $body = $(templates['contact-edit-body']);
+
+    rivets.bind($header, this.data);
+    rivets.bind($body, this.data);
+
+    $container.append($header);
+    $container.append($body);
+
+    this.update();
+  },
+
+  _updateContacts: function() {
+    Relations.getAll(this.contactId, function(err, relationIds) {
+      this.data.contacts = Contacts.list.filter(function(contact) {
+        return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
+      }.bind(this));
+
+      this.data.disabled = !this.data.contacts.length;
+
+      if (!this.data.disabled) {
+        this.data.addedRelation = this.data.contacts[0].id;
+      }
+    }.bind(this));
+  },
+
+  _addEvents: function() {
+    var relations = this.data.relations;
+    var contactId = this.contactId;
+
+    relations.forEach(function(relation) {
+      relation.remove = function() {
+        relations.splice(relations.indexOf(relation), 1);
+        Relations.remove(contactId, relation.id, function() {
+          this._updateContacts();
+        }.bind(this));
+      }.bind(this);
+    }.bind(this));
+  },
+
+  _addRelation: function() {
+    var id = this.data.addedRelation;
+
+    taistApi.log('adding relation:', id);
+    Relations.add(this.contactId, id, function() {
+      this.data.relations.push(Contacts.findById(id));
+      this._updateContacts();
+      this._addEvents();
+    }.bind(this));
+  }
+
+};
+ContactViewPage = window.ContactViewPage = {
+
+  data: {
+    title: 'Relations',
+    relations: []
+  },
+  initialized: false,
+
+  init: function () {
+    this.initialized = true;
+    taistApi.wait.elementRender('.ContactView .mainInfoWrapper', this._prepare.bind(this));
+  },
+
+  update: function() {
+    if (!this.initialized) return;
+
+    Relations.getAll(this.contactId, function(err, relationIds) {
+      this.data.relations = Contacts.getRelationContacts(relationIds);
+      var len = this.data.relations.length;
+      this.data.relations.forEach(function(contact, i) {
+        contact.last = (i === len - 1);
+      });
+      this.data.disabled = !len;
+    }.bind(this));
+  },
+
+  _prepare: function() {
+    taistApi.log('contact-view page opened');
+
+    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
+
+    if (match) {
+      this.contactId = match[2];
+    } else {
+      return;
+    }
+
+    var $container = $('.ContactView .mainInfoWrapper');
+    var $field = $(templates['contact-view']);
+
+    rivets.bind($field, this.data);
+
+    $container.find('.address.middle-column').after($field);
+
+    this.update();
   }
 
 };

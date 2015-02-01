@@ -22,11 +22,16 @@ function init() {
   Contacts.update();
 
   ContactEditPage.init();
+  ContactViewPage.init();
 
-  //taistApi.hash.onChange(function(newHash, oldHash) {
-  //  ['app/contacts/list', 'app/contacts/view', 'app/contacts/edit_contact']
-  //  console.log(newHash, oldHash);
-  //});
+  taistApi.hash.onChange(function(newHash, oldHash) {
+    ContactEditPage.update();
+    ContactViewPage.update();
+    //if (~newHash.indexOf('app/contacts')) {
+    //
+    //}
+  }.bind(this));
+
   taistApi.log('token is received: ', options.token);
 }
 
