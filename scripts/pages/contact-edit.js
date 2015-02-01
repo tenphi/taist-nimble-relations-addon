@@ -17,6 +17,14 @@ ContactEditPage = window.ContactEditPage = {
   update: function() {
     if (!this.initialized) return;
 
+    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
+
+    if (match) {
+      this.contactId = match[2];
+    } else {
+      return;
+    }
+
     Relations.getAll(this.contactId, function(err, relationIds) {
       this.data.relations = Contacts.getRelationContacts(relationIds);
       this._updateContacts();

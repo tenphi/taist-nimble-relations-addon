@@ -159,6 +159,14 @@ ContactEditPage = window.ContactEditPage = {
   update: function() {
     if (!this.initialized) return;
 
+    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
+
+    if (match) {
+      this.contactId = match[2];
+    } else {
+      return;
+    }
+
     Relations.getAll(this.contactId, function(err, relationIds) {
       this.data.relations = Contacts.getRelationContacts(relationIds);
       this._updateContacts();
@@ -246,6 +254,14 @@ ContactViewPage = window.ContactViewPage = {
   update: function() {
     if (!this.initialized) return;
 
+    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
+
+    if (match) {
+      this.contactId = match[2];
+    } else {
+      return;
+    }
+
     Relations.getAll(this.contactId, function(err, relationIds) {
       this.data.relations = Contacts.getRelationContacts(relationIds);
       var len = this.data.relations.length;
@@ -258,14 +274,6 @@ ContactViewPage = window.ContactViewPage = {
 
   _prepare: function() {
     taistApi.log('contact-view page opened');
-
-    var match = location.hash.match(/(\?|&)id=(.+)($|&)/);
-
-    if (match) {
-      this.contactId = match[2];
-    } else {
-      return;
-    }
 
     var $container = $('.ContactView .mainInfoWrapper');
     var $field = $(templates['contact-view']);
