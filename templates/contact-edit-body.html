@@ -7,6 +7,9 @@
             <div class="fieldHolder">
               <div class="nmbl-CustomFieldFormTextWidget">
                 <div class="valueHolder">
+                  <div rv-show="empty">
+                    No relations
+                  </div>
                   <div class="taist-contact" rv-each-contact="relations">
                     <a rv-href="contact.link">{ contact.full_name }</a>
                     <img rv-on-click="contact.remove" class="gwt-Image"

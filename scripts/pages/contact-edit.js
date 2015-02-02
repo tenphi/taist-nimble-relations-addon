@@ -64,6 +64,7 @@ ContactEditPage = window.ContactEditPage = {
       }.bind(this));
 
       this.data.disabled = !this.data.contacts.length;
+      this.data.empty = !this.data.relations.length;
 
       if (!this.data.disabled) {
         this.data.addedRelation = this.data.contacts[0].id;
