@@ -21,6 +21,9 @@ function inject() {
 function updateAll() {
   taistApi.log('update all');
 
+  // clear cache
+  Relations.cache = {};
+
   Contacts.update(function() {
     ContactEditPage.update();
     ContactViewPage.update();

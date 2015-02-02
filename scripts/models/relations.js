@@ -5,9 +5,7 @@ var Relations = {
   getAll: function(contactId, cb) {
     taistApi.companyData.setCompanyKey(location.host);
     if (this.cache[contactId]) {
-      setTimeout(function() {
-        cb(null, this.cache[contactId]);
-      }.bind(this), 0);
+      cb(null, this.cache[contactId]);
       return;
     }
     taistApi.companyData.get('relations' + contactId, function(err, relationIds) {
