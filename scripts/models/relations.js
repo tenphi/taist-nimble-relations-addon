@@ -1,7 +1,7 @@
 var Relations = {
 
   getAll: function(contactId, cb) {
-    taistApi.companyData.setCompanyKey('relations' + contactId);
+    taistApi.companyData.setCompanyKey(location.host);
     taistApi.companyData.get('relations' + contactId, function(err, relationIds) {
       cb(err, relationIds || []);
     });
