@@ -26,14 +26,22 @@ function init() {
   DealViewPage.init();
 
   taistApi.hash.onChange(function(newHash, oldHash) {
-    ContactEditPage.update();
-    ContactViewPage.update();
+    ['contacts/view', 'contacts/edit', 'deals/view'].forEach(function(url) {
+      if (~newHash.indexOf(url)) {
+        taistApi.log('contacts update');
 
-    // it retrieves info from rendered page
-    setTimeout(function() {
-      DealViewPage.update();
-    }, 250);
-  }.bind(this));
+        Contacts.update(function() {
+          ContactEditPage.update();
+          ContactViewPage.update();
+
+          // it retrieves info from rendered page
+          setTimeout(function() {
+            DealViewPage.update();
+          }, 100);
+        });
+      }
+    });
+  });
 
   taistApi.log('token is received: ', options.token);
 }
