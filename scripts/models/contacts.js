@@ -23,7 +23,10 @@ var Contacts = window.Contacts = {
   _prepare: function() {
     this.list = this.list.filter(function(contact) {
       if (contact.record_type === 'person') {
-        contact.full_name = contact.fields['first name'][0].value + ' ' + contact.fields['last name'][0].value;
+        contact.full_name = contact.fields['first name'][0].value;
+        if (contact.fields['last name']) {
+          contact.full_name += ' ' + contact.fields['last name'][0].value;
+        }
         contact.link = '#app/contacts/view?id=' + contact.id;
         return true;
       }
