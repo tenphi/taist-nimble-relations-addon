@@ -22,7 +22,7 @@
           </div>
         </div>
         <div rv-hide="disabled">
-          <select rv-value="addedRelation">
+          <select class="taist-select" rv-value="addedRelation">
             <option rv-each-contact="contacts" rv-value="contact.id">{ contact.full_name }</option>
           </select>
           <a rv-on-click="addRelation" class="addField" style="display: inline-block;">Add relation</a>

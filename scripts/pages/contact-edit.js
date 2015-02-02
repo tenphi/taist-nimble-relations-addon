@@ -13,6 +13,10 @@ ContactEditPage = window.ContactEditPage = {
     this.data.addRelation = this._addRelation.bind(this);
 
     taistApi.wait.elementRender('.ContactEditView .CustomFieldsContainer tbody', this._prepare.bind(this));
+
+    $(document).on('click', '.ContactEditView .nmbl-ButtonContent:contains(Update)', function() {
+      this._save();
+    }.bind(this));
   },
 
   update: function() {
@@ -26,11 +30,64 @@ ContactEditPage = window.ContactEditPage = {
       return;
     }
 
-    Relations.getAll(this.contactId, function(err, relationIds) {
-      this.data.relations = Contacts.getRelationContacts(relationIds);
-      this._updateContacts();
-      this._addEvents();
+  },
+
+  _save: function() {
+    taistApi.log('update operation');
+
+    var stack = [];
+    var all = [];
+    var prevRels = this.prevRelations.map(function(rel) { return rel.id; });
+    var newRels = this.data.relations.map(function(rel) { return rel.id; });
+    console.log('prev', prevRels);
+    console.log('new', newRels);
+    prevRels.forEach(function(id) {
+      if (!~all.indexOf(id)) {
+        all.push(id);
+      }
+    });
+    newRels.forEach(function(id) {
+      if (!~all.indexOf(id)) {
+        all.push(id);
+      }
+    });
+    console.log('all', all);
+    all.forEach(function(id) {
+      if (~prevRels.indexOf(id) && !~newRels.indexOf(id)) {
+        stack.push(function(cb) {
+          taistApi.log('remove relation', Contacts.findById(this.contactId).full_name, Contacts.findById(id).full_name);
+          Relations.remove(this.contactId, id, cb);
+        }.bind(this));
+      } else if (!~prevRels.indexOf(id) && ~newRels.indexOf(id)) {
+        stack.push(function(cb) {
+          taistApi.log('add relation', Contacts.findById(this.contactId).full_name, Contacts.findById(id).full_name);
+          Relations.add(this.contactId, id, cb);
+        }.bind(this));
+      }
     }.bind(this));
+
+    console.log('stack', stack);
+
+    if (!stack.length) {
+      return;
+    }
+
+    var cb = updateAll;
+
+    for (var i = 0; i < stack.length; i++) {
+      cb = (function(i, callback){
+        return function(err) {
+          if (err) {
+            taistApi.log(err);
+            callback(err);
+            return;
+          }
+          stack[i](callback);
+        };
+      })(i, cb);
+    }
+
+    cb();
   },
 
   _prepare: function() {
@@ -55,46 +112,76 @@ ContactEditPage = window.ContactEditPage = {
     $container.append($body);
 
     this.update();
+
+    //Relations.getAll(this.contactId, function(err, relationIds) {
+    //  this.data.contacts = Contacts.list.filter(function(contact) {
+    //    return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
+    //  }.bind(this));
+    //}.bind(this));
+
+    Relations.getAll(this.contactId, function(err, relationIds) {
+      this._updateContacts(relationIds);
+      this.prevRelations = this.data.relations.slice(0);
+      this._updateData();
+      this._addEvents();
+    }.bind(this));
   },
 
-  _updateContacts: function() {
-    Relations.getAll(this.contactId, function(err, relationIds) {
-      this.data.contacts = Contacts.list.filter(function(contact) {
-        return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
-      }.bind(this));
-
-      this.data.disabled = !this.data.contacts.length;
-      this.data.empty = !this.data.relations.length;
-
-      if (!this.data.disabled) {
-        this.data.addedRelation = this.data.contacts[0].id;
-      }
+  _updateContacts: function(relationIds) {
+    relationIds = relationIds || this.data.relations.map(function(relation) {
+      return relation.id;
+    });
+    this.data.relations = Contacts.getRelationContacts(relationIds);
+    this.data.contacts = Contacts.list.filter(function(contact) {
+      return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
     }.bind(this));
+  },
+
+  _updateData: function() {
+    this.data.disabled = !this.data.contacts.length;
+    this.data.empty = !this.data.relations.length;
+
+    if (!this.data.disabled) {
+      this.data.addedRelation = this.data.contacts[0].id;
+    }
   },
 
   _addEvents: function() {
     var relations = this.data.relations;
+    var contacts = this.data.contacts;
     var contactId = this.contactId;
 
     relations.forEach(function(relation) {
       relation.remove = function() {
-        relations.splice(relations.indexOf(relation), 1);
-        Relations.remove(contactId, relation.id, function() {
+        var rel = relations.splice(relations.indexOf(relation), 1);
+        if (rel && rel[0]) {
           this._updateContacts();
-        }.bind(this));
+          this._updateData();
+          this._addEvents();
+        }
+        //Relations.remove(contactId, relation.id, function() {
+        //  this._updateContacts();
+        //}.bind(this));
       }.bind(this);
     }.bind(this));
   },
 
   _addRelation: function() {
-    var id = this.data.addedRelation;
-
+    var id = $('.taist-select').val();
+    var contacts = this.data.contacts;
+    var relations = this.data.relations;
+    var contact = Contacts.findById(id);
     taistApi.log('adding relation:', id);
-    Relations.add(this.contactId, id, function() {
-      this.data.relations.push(Contacts.findById(id));
+
+    if (contact) {
+      relations.push(contact);
       this._updateContacts();
+      this._updateData();
       this._addEvents();
-    }.bind(this));
+    }
+    //Relations.add(this.contactId, id, function() {
+    //
+    //}.bind(this));
   }
 
 };

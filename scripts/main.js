@@ -18,6 +18,20 @@ function inject() {
   });
 }
 
+function updateAll() {
+  taistApi.log('update all');
+
+  Contacts.update(function() {
+    ContactEditPage.update();
+    ContactViewPage.update();
+
+    // it retrieves info from rendered page
+    setTimeout(function() {
+      DealViewPage.update();
+    }, 100);
+  });
+}
+
 function init() {
   Contacts.update();
 
@@ -28,17 +42,7 @@ function init() {
   taistApi.hash.onChange(function(newHash, oldHash) {
     ['contacts/view', 'contacts/edit', 'deals/view'].forEach(function(url) {
       if (~newHash.indexOf(url)) {
-        taistApi.log('contacts update');
-
-        Contacts.update(function() {
-          ContactEditPage.update();
-          ContactViewPage.update();
-
-          // it retrieves info from rendered page
-          setTimeout(function() {
-            DealViewPage.update();
-          }, 100);
-        });
+        updateAll();
       }
     });
   });
@@ -47,6 +51,6 @@ function init() {
 }
 
 function start(_taistApi, entryPoint) {
-  taistApi = _taistApi;
+  taistApi = window.taistApi = _taistApi;
   return inject();
 }
