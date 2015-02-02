@@ -1,4 +1,4 @@
-ContactViewPage = window.ContactViewPage = {
+ContactViewPage = {
 
   data: {
     title: 'Relations',

@@ -1,4 +1,4 @@
-var Contacts = window.Contacts = {
+var Contacts = {
 
   list: [],
 

@@ -1,4 +1,4 @@
-DealViewPage = window.DealViewPage = {
+DealViewPage = {
 
   data: {
     title: 'Relations:',

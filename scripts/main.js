@@ -51,6 +51,6 @@ function init() {
 }
 
 function start(_taistApi, entryPoint) {
-  taistApi = window.taistApi = _taistApi;
+  taistApi = _taistApi;
   return inject();
 }

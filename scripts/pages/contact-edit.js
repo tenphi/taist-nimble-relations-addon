@@ -1,4 +1,4 @@
-ContactEditPage = window.ContactEditPage = {
+ContactEditPage = {
 
   data: {
     title: 'Relations',
@@ -39,8 +39,7 @@ ContactEditPage = window.ContactEditPage = {
     var all = [];
     var prevRels = this.prevRelations.map(function(rel) { return rel.id; });
     var newRels = this.data.relations.map(function(rel) { return rel.id; });
-    console.log('prev', prevRels);
-    console.log('new', newRels);
+
     prevRels.forEach(function(id) {
       if (!~all.indexOf(id)) {
         all.push(id);
@@ -51,7 +50,7 @@ ContactEditPage = window.ContactEditPage = {
         all.push(id);
       }
     });
-    console.log('all', all);
+
     all.forEach(function(id) {
       if (~prevRels.indexOf(id) && !~newRels.indexOf(id)) {
         stack.push(function(cb) {
@@ -65,8 +64,6 @@ ContactEditPage = window.ContactEditPage = {
         }.bind(this));
       }
     }.bind(this));
-
-    console.log('stack', stack);
 
     if (!stack.length) {
       return;
@@ -113,12 +110,6 @@ ContactEditPage = window.ContactEditPage = {
 
     this.update();
 
-    //Relations.getAll(this.contactId, function(err, relationIds) {
-    //  this.data.contacts = Contacts.list.filter(function(contact) {
-    //    return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
-    //  }.bind(this));
-    //}.bind(this));
-
     Relations.getAll(this.contactId, function(err, relationIds) {
       this._updateContacts(relationIds);
       this.prevRelations = this.data.relations.slice(0);
@@ -148,8 +139,6 @@ ContactEditPage = window.ContactEditPage = {
 
   _addEvents: function() {
     var relations = this.data.relations;
-    var contacts = this.data.contacts;
-    var contactId = this.contactId;
 
     relations.forEach(function(relation) {
       relation.remove = function() {
@@ -159,16 +148,12 @@ ContactEditPage = window.ContactEditPage = {
           this._updateData();
           this._addEvents();
         }
-        //Relations.remove(contactId, relation.id, function() {
-        //  this._updateContacts();
-        //}.bind(this));
       }.bind(this);
     }.bind(this));
   },
 
   _addRelation: function() {
     var id = $('.taist-select').val();
-    var contacts = this.data.contacts;
     var relations = this.data.relations;
     var contact = Contacts.findById(id);
     taistApi.log('adding relation:', id);
@@ -179,9 +164,6 @@ ContactEditPage = window.ContactEditPage = {
       this._updateData();
       this._addEvents();
     }
-    //Relations.add(this.contactId, id, function() {
-    //
-    //}.bind(this));
   }
 
 };

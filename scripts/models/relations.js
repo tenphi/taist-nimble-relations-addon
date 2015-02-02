@@ -1,4 +1,4 @@
-var Relations = window.Relations = {
+var Relations = {
 
   cache: {},
 

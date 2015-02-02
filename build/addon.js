@@ -53,14 +53,14 @@ function init() {
 }
 
 function start(_taistApi, entryPoint) {
-  taistApi = window.taistApi = _taistApi;
+  taistApi = _taistApi;
   return inject();
 }
 var templates; if (!templates) { templates = {}} templates["contact-edit-body"] = '<tr class="twoColumn">  <td colspan="2">    <div class="leftPanel">      <div class="ContactFieldWidget edit multi-line-text-box twoColumn">        <div>          <div class="ContactInputWidget initial">            <div class="fieldHolder">              <div class="nmbl-CustomFieldFormTextWidget">                <div class="valueHolder">                  <div rv-show="empty">                    No relations                  </div>                  <div class="taist-contact" rv-each-contact="relations">                    <a rv-href="contact.link">{ contact.full_name }</a>                    <img rv-on-click="contact.remove" class="gwt-Image"                         src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAATCAYAAABLN4eXAAAAlUlEQVR42mNgoBScO3dO//z58yeA9H8YhvL18WnaiKwBCW/Ep+kkEL9BE3sDEkdX+B2H6bjwd/I0gQDQs9EggTNnzthgczZIHBoo0XBBijRduHDB7NSpU0pA9h6of/eA+CDxEaWJrNAD4rmrVq1iRtawf/9+lrNnz87HpsmfmNQAUgfXdPHiRW6g4AoCmlaA1DHQFQAAk+K2Z8TV29MAAAAASUVORK5CYII=">                    <div style="clear:both;"></div>                  </div>                </div>              </div>            </div>          </div>        </div>        <div rv-hide="disabled">          <select class="taist-select" rv-value="addedRelation">            <option rv-each-contact="contacts" rv-value="contact.id">{ contact.full_name }</option>          </select>          <a rv-on-click="addRelation" class="addField" style="display: inline-block;">Add relation</a>        </div>      </div>    </div>  </td></tr>'; 
 var templates; if (!templates) { templates = {}} templates["contact-edit-header"] = '<tr class="twoColumn">  <td colspan="2">    <div class="leftPanel">      <div class="ContactFieldWidget edit separator twoColumn noborder">        <div>          <div class="ContactInputWidget">            <div class="fieldHolder">              <div class="nmbl-CustomFieldSeparator">                <div class="valueHolder">                  <div style="clear:both;"></div>                  <div class="blockHeader resolutionMin">{ title }</div>                </div>              </div>            </div>          </div>        </div>        <div aria-hidden="true" style="display: none;"><a class="addField">{ title }</a></div>      </div>    </div>  </td></tr>'; 
 var templates; if (!templates) { templates = {}} templates["contact-view"] = '<div rv-hide="disabled" class="relations info-field middle-column" style="white-space: nowrap;">  <span>{ title }</span>  <span rv-each-contact="relations" style="width: auto;">    <a rv-href="contact.link">{ contact.full_name }</a><span style="width: auto;" rv-hide="contact.last">,</span>&nbsp;  </span></div>'; 
 var templates; if (!templates) { templates = {}} templates["deal-view"] = '<span rv-hide="disabled" style="white-space: nowrap;">  (  <span>{ title }</span>  <span rv-each-contact="relations" style="width: auto;">    <a rv-href="contact.link">{ contact.full_name }</a><span style="width: auto;" rv-hide="contact.last">,</span>&nbsp;  </span>  )</span>'; 
-var Contacts = window.Contacts = {
+var Contacts = {
 
   list: [],
 
@@ -114,7 +114,7 @@ var Contacts = window.Contacts = {
   }
 
 };
-var Relations = window.Relations = {
+var Relations = {
 
   cache: {},
 
@@ -182,49 +182,7 @@ var Relations = window.Relations = {
   }
 
 };
-var _responseHandlers = [],
-  listening = false;
-
-function listenToRequests() {
-  var originalSend = XMLHttpRequest.prototype.send;
-
-  XMLHttpRequest.prototype.send = function() {
-    listenForRequestFinish(this);
-    originalSend.apply(this, arguments);
-  }
-}
-
-function listenForRequestFinish(request) {
-  var originalOnReadyStateChange = request.onreadystatechange;
-
-  request.onreadystatechange = function() {
-    if (request.readyState === 4) {
-      _responseHandlers.forEach(function(handler) {
-        handler(request);
-      });
-    }
-
-    if (originalOnReadyStateChange) {
-      originalOnReadyStateChange.apply(request, arguments);
-    }
-  };
-}
-
-var xhrWrapper = {
-
-  onRequestFinish: function(handler) {
-    _responseHandlers.push(handler);
-    if (!listening) {
-      listenToRequests();
-    }
-  },
-
-  isListening: function() {
-    return listening;
-  }
-
-};
-ContactEditPage = window.ContactEditPage = {
+ContactEditPage = {
 
   data: {
     title: 'Relations',
@@ -265,8 +223,7 @@ ContactEditPage = window.ContactEditPage = {
     var all = [];
     var prevRels = this.prevRelations.map(function(rel) { return rel.id; });
     var newRels = this.data.relations.map(function(rel) { return rel.id; });
-    console.log('prev', prevRels);
-    console.log('new', newRels);
+
     prevRels.forEach(function(id) {
       if (!~all.indexOf(id)) {
         all.push(id);
@@ -277,7 +234,7 @@ ContactEditPage = window.ContactEditPage = {
         all.push(id);
       }
     });
-    console.log('all', all);
+
     all.forEach(function(id) {
       if (~prevRels.indexOf(id) && !~newRels.indexOf(id)) {
         stack.push(function(cb) {
@@ -291,8 +248,6 @@ ContactEditPage = window.ContactEditPage = {
         }.bind(this));
       }
     }.bind(this));
-
-    console.log('stack', stack);
 
     if (!stack.length) {
       return;
@@ -339,12 +294,6 @@ ContactEditPage = window.ContactEditPage = {
 
     this.update();
 
-    //Relations.getAll(this.contactId, function(err, relationIds) {
-    //  this.data.contacts = Contacts.list.filter(function(contact) {
-    //    return !~relationIds.indexOf(contact.id) && contact.id !== this.contactId;
-    //  }.bind(this));
-    //}.bind(this));
-
     Relations.getAll(this.contactId, function(err, relationIds) {
       this._updateContacts(relationIds);
       this.prevRelations = this.data.relations.slice(0);
@@ -374,8 +323,6 @@ ContactEditPage = window.ContactEditPage = {
 
   _addEvents: function() {
     var relations = this.data.relations;
-    var contacts = this.data.contacts;
-    var contactId = this.contactId;
 
     relations.forEach(function(relation) {
       relation.remove = function() {
@@ -385,16 +332,12 @@ ContactEditPage = window.ContactEditPage = {
           this._updateData();
           this._addEvents();
         }
-        //Relations.remove(contactId, relation.id, function() {
-        //  this._updateContacts();
-        //}.bind(this));
       }.bind(this);
     }.bind(this));
   },
 
   _addRelation: function() {
     var id = $('.taist-select').val();
-    var contacts = this.data.contacts;
     var relations = this.data.relations;
     var contact = Contacts.findById(id);
     taistApi.log('adding relation:', id);
@@ -405,13 +348,10 @@ ContactEditPage = window.ContactEditPage = {
       this._updateData();
       this._addEvents();
     }
-    //Relations.add(this.contactId, id, function() {
-    //
-    //}.bind(this));
   }
 
 };
-ContactViewPage = window.ContactViewPage = {
+ContactViewPage = {
 
   data: {
     title: 'Relations',
@@ -460,7 +400,7 @@ ContactViewPage = window.ContactViewPage = {
   }
 
 };
-DealViewPage = window.DealViewPage = {
+DealViewPage = {
 
   data: {
     title: 'Relations:',
@@ -509,6 +449,48 @@ DealViewPage = window.DealViewPage = {
     $container.append($field);
 
     this.update();
+  }
+
+};
+var _responseHandlers = [],
+  listening = false;
+
+function listenToRequests() {
+  var originalSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.send = function() {
+    listenForRequestFinish(this);
+    originalSend.apply(this, arguments);
+  }
+}
+
+function listenForRequestFinish(request) {
+  var originalOnReadyStateChange = request.onreadystatechange;
+
+  request.onreadystatechange = function() {
+    if (request.readyState === 4) {
+      _responseHandlers.forEach(function(handler) {
+        handler(request);
+      });
+    }
+
+    if (originalOnReadyStateChange) {
+      originalOnReadyStateChange.apply(request, arguments);
+    }
+  };
+}
+
+var xhrWrapper = {
+
+  onRequestFinish: function(handler) {
+    _responseHandlers.push(handler);
+    if (!listening) {
+      listenToRequests();
+    }
+  },
+
+  isListening: function() {
+    return listening;
   }
 
 };
