@@ -61,8 +61,128 @@ function start(_taistApi, entryPoint) {
 }
 var templates; if (!templates) { templates = {}} templates["contact-edit-body"] = '<tr class="twoColumn">  <td colspan="2">    <div class="leftPanel">      <div class="ContactFieldWidget edit multi-line-text-box twoColumn">        <div>          <div class="ContactInputWidget initial">            <div class="fieldHolder">              <div class="nmbl-CustomFieldFormTextWidget">                <div class="valueHolder">                  <div rv-show="empty">                    No relations                  </div>                  <div class="taist-contact" rv-each-contact="relations">                    <a rv-href="contact.link">{ contact.full_name }</a>                    <img rv-on-click="contact.remove" class="gwt-Image"                         src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAATCAYAAABLN4eXAAAAlUlEQVR42mNgoBScO3dO//z58yeA9H8YhvL18WnaiKwBCW/Ep+kkEL9BE3sDEkdX+B2H6bjwd/I0gQDQs9EggTNnzthgczZIHBoo0XBBijRduHDB7NSpU0pA9h6of/eA+CDxEaWJrNAD4rmrVq1iRtawf/9+lrNnz87HpsmfmNQAUgfXdPHiRW6g4AoCmlaA1DHQFQAAk+K2Z8TV29MAAAAASUVORK5CYII=">                    <div style="clear:both;"></div>                  </div>                </div>              </div>            </div>          </div>        </div>        <div rv-hide="disabled">          <select class="taist-select" rv-value="addedRelation">            <option rv-each-contact="contacts" rv-value="contact.id">{ contact.full_name }</option>          </select>          <a rv-on-click="addRelation" class="addField" style="display: inline-block;">Add relation</a>        </div>      </div>    </div>  </td></tr>'; 
 var templates; if (!templates) { templates = {}} templates["contact-edit-header"] = '<tr class="twoColumn">  <td colspan="2">    <div class="leftPanel">      <div class="ContactFieldWidget edit separator twoColumn noborder">        <div>          <div class="ContactInputWidget">            <div class="fieldHolder">              <div class="nmbl-CustomFieldSeparator">                <div class="valueHolder">                  <div style="clear:both;"></div>                  <div class="blockHeader resolutionMin">{ title }</div>                </div>              </div>            </div>          </div>        </div>        <div aria-hidden="true" style="display: none;"><a class="addField">{ title }</a></div>      </div>    </div>  </td></tr>'; 
-var templates; if (!templates) { templates = {}} templates["contact-view"] = '<div rv-hide="disabled" class="relations info-field middle-column" style="white-space: nowrap;">  <span>{ title }</span>  <span rv-each-contact="relations" style="width: auto;">    <a rv-href="contact.link">{ contact.full_name }</a><span style="width: auto;" rv-hide="contact.last">,</span>&nbsp;  </span></div>'; 
+var templates; if (!templates) { templates = {}} templates["contact-view"] = '<div rv-hide="disabled" class="relations info-field middle-column" style="white-space: nowrap;">  <span>{ title }</span>  <span rv-each-contact="relations" style="width: auto;">    <a rv-href="contact.link">{ contact.full_name }</a><em style="width: auto;" rv-hide="contact.last">,</span>  </em></div>'; 
 var templates; if (!templates) { templates = {}} templates["deal-view"] = '<span rv-hide="disabled" style="white-space: nowrap;">  (  <span>{ title }</span>  <span rv-each-contact="relations" style="width: auto;">    <a rv-href="contact.link">{ contact.full_name }</a><span style="width: auto;" rv-hide="contact.last">,</span>&nbsp;  </span>  )</span>'; 
+var Contacts = {
+
+  list: [],
+
+  update: function(cb) {
+    jQuery.ajax(
+      {
+        url: '/api/v1/contacts/list?keyword=&query=&sort=recently%20viewed:asc&per_page=3000&page=1&fields=first%20name,last%20name,company%20name,parent%20company,email,phone,lead%20type,lead%20status,address,title&record_type=',
+        method: 'GET',
+        headers: {
+          Authorization: 'Nimble token="' + options.token + '"'
+        },
+        success: function(data) {
+          if (!data) return;
+          Contacts.list = data.resources;
+          this._prepare();
+          cb && cb(null, Contacts.list);
+          taistApi.log(Contacts.list);
+        }.bind(this)
+      });
+  },
+
+  _prepare: function() {
+    this.list = this.list.filter(function(contact) {
+      if (contact.record_type === 'person') {
+        contact.full_name = contact.fields['first name'][0].value;
+        if (contact.fields['last name']) {
+          contact.full_name += ' ' + contact.fields['last name'][0].value;
+        }
+        contact.link = '#app/contacts/view?id=' + contact.id;
+        return true;
+      }
+    });
+  },
+
+  getRelationContacts: function(relationIds) {
+    var _this = this;
+
+    return relationIds.map(function(id) {
+      return _this.findById(id);
+    }).filter(function(contact) {
+      return !!contact;
+    });
+  },
+
+  findById: function(id) {
+    for (var i = 0, len = this.list.length; i < len; i++) {
+      if (this.list[i].id === id) {
+        return this.list[i];
+      }
+    }
+  }
+
+};
+var Relations = {
+
+  cache: {},
+
+  getAll: function(contactId, cb) {
+    taistApi.companyData.setCompanyKey(location.host);
+    if (this.cache[contactId]) {
+      cb(null, this.cache[contactId]);
+      return;
+    }
+    taistApi.companyData.get('relations' + contactId, function(err, relationIds) {
+      taistApi.log('get all relations of #' + contactId, relationIds);
+      this.cache[contactId] = relationIds || []
+      cb(err, this.cache[contactId]);
+    }.bind(this));
+  },
+
+  add: function(id1, id2, cb) {
+    this.getAll(id1, function(err, relations) {
+      if (!~relations.indexOf(id2)) {
+        relations.push(id2);
+        this._save(id1, relations, function() {
+          this.getAll(id2, function(err, relations) {
+            if (!~relations.indexOf(id1)) {
+              relations.push(id1);
+              this._save(id2, relations, cb);
+            }
+          }.bind(this));
+        }.bind(this));
+      }
+    }.bind(this));
+  },
+
+  remove: function(id1, id2, cb) {
+    this.getAll(id1, function(err, relations) {
+      if (err) {
+        cb && cb(err);
+        return;
+      }
+      relations.splice(relations.indexOf(id2), 1);
+      this._save(id1, relations, function(err) {
+        if (err) {
+          cb && cb(err);
+          return;
+        }
+        this.getAll(id2, function(err, relations) {
+          if (err) {
+            cb && cb(err);
+            return;
+          }
+          relations.splice(relations.indexOf(id1), 1);
+          this._save(id2, relations, cb);
+        }.bind(this));
+      }.bind(this));
+    }.bind(this));
+  },
+
+  _save: function(contactId, relations, cb) {
+    delete this.cache[contactId];
+    taistApi.companyData.set('relations' + contactId, relations, function(err) {
+      err && taistApi.log('relation wasn\'t saved:');
+      cb && cb(err);
+    });
+  }
+
+};
 ContactEditPage = {
 
   data: {
@@ -330,126 +450,6 @@ DealViewPage = {
     $container.append($field);
 
     this.update();
-  }
-
-};
-var Contacts = {
-
-  list: [],
-
-  update: function(cb) {
-    jQuery.ajax(
-      {
-        url: '/api/v1/contacts/list?keyword=&query=&sort=recently%20viewed:asc&per_page=3000&page=1&fields=first%20name,last%20name,company%20name,parent%20company,email,phone,lead%20type,lead%20status,address,title&record_type=',
-        method: 'GET',
-        headers: {
-          Authorization: 'Nimble token="' + options.token + '"'
-        },
-        success: function(data) {
-          if (!data) return;
-          Contacts.list = data.resources;
-          this._prepare();
-          cb && cb(null, Contacts.list);
-          taistApi.log(Contacts.list);
-        }.bind(this)
-      });
-  },
-
-  _prepare: function() {
-    this.list = this.list.filter(function(contact) {
-      if (contact.record_type === 'person') {
-        contact.full_name = contact.fields['first name'][0].value;
-        if (contact.fields['last name']) {
-          contact.full_name += ' ' + contact.fields['last name'][0].value;
-        }
-        contact.link = '#app/contacts/view?id=' + contact.id;
-        return true;
-      }
-    });
-  },
-
-  getRelationContacts: function(relationIds) {
-    var _this = this;
-
-    return relationIds.map(function(id) {
-      return _this.findById(id);
-    }).filter(function(contact) {
-      return !!contact;
-    });
-  },
-
-  findById: function(id) {
-    for (var i = 0, len = this.list.length; i < len; i++) {
-      if (this.list[i].id === id) {
-        return this.list[i];
-      }
-    }
-  }
-
-};
-var Relations = {
-
-  cache: {},
-
-  getAll: function(contactId, cb) {
-    taistApi.companyData.setCompanyKey(location.host);
-    if (this.cache[contactId]) {
-      cb(null, this.cache[contactId]);
-      return;
-    }
-    taistApi.companyData.get('relations' + contactId, function(err, relationIds) {
-      taistApi.log('get all relations of #' + contactId, relationIds);
-      this.cache[contactId] = relationIds || []
-      cb(err, this.cache[contactId]);
-    }.bind(this));
-  },
-
-  add: function(id1, id2, cb) {
-    this.getAll(id1, function(err, relations) {
-      if (!~relations.indexOf(id2)) {
-        relations.push(id2);
-        this._save(id1, relations, function() {
-          this.getAll(id2, function(err, relations) {
-            if (!~relations.indexOf(id1)) {
-              relations.push(id1);
-              this._save(id2, relations, cb);
-            }
-          }.bind(this));
-        }.bind(this));
-      }
-    }.bind(this));
-  },
-
-  remove: function(id1, id2, cb) {
-    this.getAll(id1, function(err, relations) {
-      if (err) {
-        cb && cb(err);
-        return;
-      }
-      relations.splice(relations.indexOf(id2), 1);
-      this._save(id1, relations, function(err) {
-        if (err) {
-          cb && cb(err);
-          return;
-        }
-        this.getAll(id2, function(err, relations) {
-          if (err) {
-            cb && cb(err);
-            return;
-          }
-          relations.splice(relations.indexOf(id1), 1);
-          this._save(id2, relations, cb);
-        }.bind(this));
-      }.bind(this));
-    }.bind(this));
-  },
-
-  _save: function(contactId, relations, cb) {
-    delete this.cache[contactId];
-    taistApi.companyData.set('relations' + contactId, relations, function(err) {
-      err && taistApi.log('relation wasn\'t saved:');
-      cb && cb(err);
-    });
   }
 
 };

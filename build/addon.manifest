@@ -1,6 +1,7 @@
 {
   "id": "nimble-relations",
   "js": "addon.js",
+  "css": "addon.css",
   "title": "Relations",
   "siteName": "Nimble",
   "siteRegexp": "nimble.com",
