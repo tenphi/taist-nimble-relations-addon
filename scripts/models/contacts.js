@@ -3,21 +3,18 @@ var Contacts = {
   list: [],
 
   update: function(cb) {
-    jQuery.ajax(
-      {
-        url: '/api/v1/contacts/list?keyword=&query=&sort=recently%20viewed:asc&per_page=3000&page=1&fields=first%20name,last%20name,company%20name,parent%20company,email,phone,lead%20type,lead%20status,address,title&record_type=',
-        method: 'GET',
-        headers: {
-          Authorization: 'Nimble token="' + options.token + '"'
-        },
-        success: function(data) {
-          if (!data) return;
-          Contacts.list = data.resources;
-          this._prepare();
-          cb && cb(null, Contacts.list);
-          taistApi.log(Contacts.list);
-        }.bind(this)
-      });
+    taistApi.proxy.jQueryAjax('/', 'api/v1/contacts/list?keyword=&query=&sort=recently%20viewed:asc&per_page=3000&page=1&fields=first%20name,last%20name,company%20name,parent%20company,email,phone,lead%20type,lead%20status,address,title&record_type=', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Nimble token="' + options.token + '"'
+      }
+    }, function(err, data) {
+      if (!data) return;
+      Contacts.list = data.resources;
+      this._prepare();
+      cb && cb(null, Contacts.list);
+      taistApi.log(Contacts.list);
+    }.bind(this));
   },
 
   _prepare: function() {
